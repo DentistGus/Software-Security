@@ -1,0 +1,76 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {chapter}{\numberline {1}Concetti chiave}{5}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Terminologia di base}{5}{section.1.1}%
+\contentsline {section}{\numberline {1.2}CVE}{8}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}CVSS}{9}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}CWE}{10}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}CPE}{10}{subsection.1.2.3}%
+\contentsline {section}{\numberline {1.3}Divulgazione delle vulnerabilità}{11}{section.1.3}%
+\contentsline {chapter}{\numberline {2}Buffer Overflow}{13}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Mappatura della memoria dei processi}{15}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Stack overflow}{16}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Prevenzione buffer overflow}{20}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Contromisure buffer overflow}{21}{section.2.4}%
+\contentsline {chapter}{\numberline {3}Web Security}{24}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Attacchi lato Client}{24}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Cross-Site Request Forgery (CSRF)}{25}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Cross-Site Scripting (XSS)}{27}{subsection.3.1.2}%
+\contentsline {section}{\numberline {3.2}Attacchi lato Server}{31}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}SQL Injection}{31}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}OS Command Injection}{33}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Path Traversal (File Disclosure)}{34}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}Server-Side Request Forgery (SSRF)}{36}{subsection.3.2.4}%
+\contentsline {chapter}{\numberline {4}Sanitizers}{38}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Analisi delle vulnerabilità legate alla memoria}{39}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Buffer Over-read}{39}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Double-free \& Use-After-Free}{39}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Uninitialized memory}{40}{subsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.1.4}Format string attacks}{41}{subsection.4.1.4}%
+\contentsline {subsection}{\numberline {4.1.5}Integer overflow}{41}{subsection.4.1.5}%
+\contentsline {section}{\numberline {4.2}Sanitizer}{42}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Valgrind (Memcheck)}{44}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}AddressSanitizer (ASan)}{44}{subsection.4.2.2}%
+\contentsline {chapter}{\numberline {5}LLM Security}{47}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Nozioni di base sui LLM}{47}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Pre-training}{49}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Fine-tuning}{49}{subsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.1.3}Fase di Allineamento - RLHF}{50}{subsection.5.1.3}%
+\contentsline {section}{\numberline {5.2}Prompt Injection}{50}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Direct Prompt Injection}{50}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Indirect Prompt Injection}{51}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Multi-turn Attacks (Crescendo)}{52}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}Mitigazioni}{52}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Testing Automatizzato: AI Red Teaming}{54}{section.5.4}%
+\contentsline {chapter}{\numberline {6}Fuzzing}{55}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Test Positivo vs Test Negativo}{56}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Tipi di Fuzzer}{57}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Generation-based Fuzzers (Fuzzing Generazionale)}{58}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Mutation-based Fuzzers (Fuzzing Mutazionale)}{62}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Fuzzing basato su Algoritmi Genetici}{62}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}American Fuzzy Lop (AFL)}{65}{subsection.6.3.1}%
+\contentsline {chapter}{\numberline {7}Analisi Statica}{69}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Tecniche di Base}{71}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Tecniche Avanzate e Modellazione}{72}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Modellazione}{73}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Tipologie di Analisi di Sicurezza Avanzata}{76}{subsection.7.2.2}%
+\contentsline {section}{\numberline {7.3}Astrazione e Zero Analysis}{78}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Limiti Teorici e Pratici}{80}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Analisi statica e gli LLM}{82}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Tool per l'Analisi Statica}{83}{section.7.6}%
+\contentsline {subsection}{\numberline {7.6.1}FindBugs}{84}{subsection.7.6.1}%
+\contentsline {subsection}{\numberline {7.6.2}GitHub CodeQL}{86}{subsection.7.6.2}%
+\contentsline {chapter}{\numberline {8}Security Development Lifecycle}{93}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Microsoft SDL}{94}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Agile}{99}{section.8.2}%
+\contentsline {section}{\numberline {8.3}Da DevOps a DevSecOps}{101}{section.8.3}%
+\contentsline {subsection}{\numberline {8.3.1}Maturità del DevSecOps}{102}{subsection.8.3.1}%
+\contentsline {chapter}{\numberline {9}Cyber Threat Intelligence}{104}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Ecosistema della CTI}{104}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Dati e IOC}{105}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Piattaforme e Standard}{107}{section.9.3}%
+\contentsline {subsection}{\numberline {9.3.1}Threat Intelligence Feeds}{109}{subsection.9.3.1}%
+\contentsline {section}{\numberline {9.4}Framework Analitici}{110}{section.9.4}%
+\contentsline {subsection}{\numberline {9.4.1}Cyber Kill Chain}{110}{subsection.9.4.1}%
+\contentsline {subsection}{\numberline {9.4.2}Diamond Model}{111}{subsection.9.4.2}%
+\contentsline {subsection}{\numberline {9.4.3}MITRE ATT\&CK}{112}{subsection.9.4.3}%

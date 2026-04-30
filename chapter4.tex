@@ -1,0 +1,256 @@
+\chapter{Sanitizers}
+In questo capitolo esploreremo le vulnerabilità critiche legate alla gestione 
+della memoria in C/C++ (come \textit{buffer overflow}, \textit{use-after-free} e \textit{uninitialized 
+memory}) e analizzeremo il funzionamento dei "Sanitizers". In 
+particolare, metteremo in luce la contrapposione tra l'approccio dinamico di \textbf{Valgrind} a quello statico 
+di \textbf{AddressSanitizer} (\textbf{ASan}), spiegandone l'implementazione a livello di 
+shadow memory e l'impatto sulle performance.
+
+I bug di gestione della memoria sono subdoli perché un programma può 
+tecnicamente "sopravvivere" a un buffer overflow senza andare in crash.
+Questo accade per ragioni architetturali specifiche:
+
+\begin{itemize}
+    \item La memoria heap è pre-allocata ed espandibile, con permessi di lettura e scrittura (R/W).
+    \item La memoria viene allocata dal sistema operativo in "\textbf{pagine}" (tipicamente da 4096 byte su architetture Linux/x86).
+    \item Se un overflow eccede il buffer allocato (es. 30 byte) ma rimane 
+    all'interno della stessa pagina di memoria, non viene generata alcuna 
+    eccezione a livello di CPU (\textit{page fault}) e il programma continua 
+    l'esecuzione.
+    \item Il crash si verifica solo quando l'overflow tenta di accedere a una pagina non mappata o protetta, causando un'eccezione hardware.
+\end{itemize}
+
+\section{Analisi delle vulnerabilità legate alla memoria}
+
+\subsection{Buffer Over-read}
+
+A differenza dell'overflow distruttivo, l'over-read non sovrascrive nulla, 
+ma legge oltre i limiti previsti, causando la fuga di dati sensibili.
+Esempio di buffer Over-read storicamente noto è il bug \textbf{Heartbleed} di 
+\textit{OpenSSL} nel quale il client invia un payload contenente una stringa
+e la sua lunghezza dichiarata; se il client invia ad esempio la parola "HAT" 
+ma dichiara una lunghezza di 500 caratteri, il server alloca un buffer e 
+copia i 3 caratteri. Successivamente, il server legge 500 byte a partire 
+dall'indirizzo di memoria di "HAT", inviando indietro al client i 497 byte 
+adiacenti che si trovavano già in memoria; il problema è proprio legato a quei
+497 byte poiché possono contenere chiavi master del server, password di altri 
+utenti o dati sensibili.
+
+\subsection{Double-free \& Use-After-Free}
+Come sappiamo in C/C++ non abbiamo un \textit{garbage collector} infatti gestiamo
+manualmente la memoria. Non dovremmo assolutamente fare due volte una \textit{free} e
+nè dovremmo usare un puntatore ad una certa area se abbiamo fatto la \textit{free}.
+
+Questa vulnerabilità nasce proprio quando la memoria allocata dinamicamente 
+(con \textit{new} o \textit{malloc}) viene liberata (con \textit{free} o 
+\textit{delete}) ma il programma continua ad utilizzare un puntatore che punta 
+a quell'area.
+
+Esempio di \textbf{Safari} (Apple):
+
+\begin{lstlisting}
+//un oggetto "animator" viene creato
+Animator * animator = getAnimatorObj();
+...
+//la funzione setCurrentTime() attiva l'handler() che resetta l'oggetto "animator"
+...
+delete svg->animator_ptr;
+//...continuo della funzione setCurrentTime()
+animator->DoSomething(); // uso della memoria liberata!
+\end{lstlisting}
+
+Nel motore JavaScript, viene creato un oggetto \textit{animator\_ptr} in C++. 
+Una funzione \textit{setCurrentTime()} innesca una reazione a catena che 
+cancella (\textit{delete}) questo oggetto, tuttavia, il puntatore viene 
+riutilizzato subito dopo chiamando \textit{animator->DoSomething()}.
+
+L'attaccante a questo punto può iniettare uno script JS \textit{MaliciousObject} poiché 
+l'allocatore heap dell'OS, per efficienza, riutilizza l'area di memoria 
+appena liberata assegnandola al \textit{MaliciousObject}. Quando viene 
+chiamato \textit{animator->DoSomething()}, il programma esegue in realtà 
+il codice dell'attaccante.
+
+\subsection{Uninitialized memory}
+
+Le variabili non inizializzate in C contengono i "rifiuti" (dati precedenti) 
+rimasti in quel segmento di memoria.
+
+Esempio del \textbf{kernel Linux} (CVE-2016-4569): tale problema dimostra 
+come le chiamate di sistema (\textit{system call}) spostino lo stack 
+pointer del kernel, ma non puliscano i contenuti dello stack. Se il kernel 
+non inizializza una struttura dati e la copia in user space, i byte non 
+inizializzati conterranno frammenti del kernel stack, permettendo agli 
+attaccanti di bypassare mitigazioni come \textbf{ASLR}.
+
+\subsection{Format string attacks}
+
+Le funzioni della famiglia printf() e scanf() utilizzano le \textbf{format string}, ovvero un
+linguaggio minimale per indicare e definire input e output, tipo \%s, \%d e così via.
+Il problema nasce dal fatto che alcuni programmi permettono all'attaccante 
+di controllare la format string, vediamo un esempio:
+
+\begin{lstlisting}
+int main() {
+    char nome[100];
+    printf("Inserisci un nome: ");
+    fgets(nome, sizeof(nome)-1, stdin);
+    printf(nome);       //SBAGLIATO!
+    printf("%s", nome); //OK!
+}
+\end{lstlisting}
+
+Dunque per fare la stampa di una variabile va usata sempre la format string "\%s" nella \textit{printf()}. 
+Se non si fa e si fa direttamente \textit{printf(nome)}, l'attaccante, nella stringa \textit{nome}, 
+può mette valori speciali come "\%x\%x\%x\%x" che gli consente di stampare lo
+stack oppure "\%n" per sovrascrivere un'area di memoria arbitraria.
+
+\subsection{Integer overflow}
+
+Gli interi in C usano un numero fisso di bit; se si supera il limite massimo, 
+il valore "wrappa" a un numero negativo o tronco.
+
+\begin{lstlisting}
+int check(unsigned short len, char * ptr) {
+    if(len >= 10) return -1;
+    printf("s = %d\n", len);
+    return 0;
+}
+
+int main(int argc, char *argv[]) {
+    char buf[10];
+    int n = atoi(argv[1]);
+    if( check(n, argv[2]) == -1 ) {
+        printf("Oh no you don't!\n");
+        return -1;
+    }
+    strncpy(buf, argv[2], n);
+    printf("%s\n", buf);
+    return 0;
+}
+\end{lstlisting}
+
+Nell'esempio riportato notiamo che nella funzione \textit{check()} abbiamo 
+un \textit{implicit cast} ad \textbf{unsigned short} ed, essendo 65535 il massimo 
+valore per uno \textit{short int}, avremo un integer overflow nel caso in cui n sia maggiore
+di quel valore.
+
+Spesso attacchi di questo tipo vengono utilizzati per arrivare ad un buffer
+overflow, ad esempio attaccando l'indice di un array per farlo eccedere la sua
+dimensione massima e quindi accedere a più dati.
+
+\section{Sanitizer}
+
+Sono tool che hanno il ruolo di bug detector per C/C++, sono capaci cioè di darci un
+avviso nel momento in cui il nostro programma ha un problema di quelli visti in
+precedenza nella gestione della memoria. Il programma o viene fermato o 
+comunque veniamo avvisati del tutto.
+
+Fondamentalmente si va ad inserire delle sonde (dunque codice aggiuntivo) nel nostro
+programma, definite \textbf{instrumentation}, utilizzate per capire se ci sono dei problemi
+nell'utilizzo della memoria. Il programma originale viene modificato 
+aggiungendo le sonde per collezionare informazioni riguardo l'esecuzione e 
+per prendere decisioni sulla base di queste.
+
+\begin{itemize}
+    \item Se la code instrumentation va a prendere il codice macchina prima che venga
+    eseguito sul processore e inserisce delle sonde si parla di \textbf{instrumentazione
+    dinamica}, in quanto queste vengono iniettate a run-time.
+    \item Se l'instrumentazione avviene al tempo di compilazione, ovvero le sonde
+    vengono inserite prima della compilazione nel codice sorgente, si parla allora
+    di \textbf{instrumentazione statica}.
+\end{itemize}
+Esempio di instrumentazione statica:
+
+\begin{lstlisting}
+int main() {
+    allocations.init();
+    char * p = malloc(100);
+    allocations.insert(p, 100);
+    int offset = 200;
+    if(allocations.find(p+offset)) print_error(p+offset);
+    p[offset] = 'A';
+    allocations.find_leaks();
+}
+\end{lstlisting}
+
+Nell'esempio ogni volta che si crea un oggetto viene aggiunta un'istruzione che si
+segna l'oggetto creato e la sua dimensione. Nel momento dell'utilizzo si aggiunge
+prima di questo un \textit{if} che verifica che l'offset inserito non ecceda la dimensione
+massima segnata. Prima della fine del programma si fa anche una 
+ricerca dei \textit{memory leak}, ovvero si controlla che tulle le variabili allocate 
+siano state correttamente deallocate.
+
+Anche la stessa \textbf{Code Coverage} viene fatta con lo stesso principio, inserendo
+delle sonde e valutando alla fine delle esecuzioni quante di queste sono state
+eseguite.
+
+\subsection{Valgrind (Memcheck)}
+
+Valgrind è un framework di analisi dinamica che non richiede la 
+ricompilazione del codice sorgente Esso utilizza la traduzione \textbf{Just-In-Time} 
+(JIT) per eseguire il binario all'interno di una CPU virtuale, iniettando 
+istruzioni di analisi a runtime. \textbf{Shadow Memory} (\textbf{Memcheck}): mantiene una 
+mappa della memoria usando "\textit{V bits}" (\textit{Valid-value}, indica se il dato è 
+inizializzato) e "\textit{A bits}" (\textit{Valid-address}, indica se l'indirizzo è allocato 
+legittimamente). Il bit V segue il dato ovunque, persino dentro i registri 
+della CPU virtuale.
+
+\textbf{Limiti di Valgrind}:
+\begin{itemize}
+    \item \textbf{Overhead estremo}: Valgrind rallenta l'esecuzione da 10x a 60x e triplica l'uso di RAM.
+    \item \textbf{Blind spot sugli array di stack}: Avendo ad esempio due buffer \textit{int a[16]; int b[16];} sullo 
+    stack, essi sono contigui in memoria. A livello binario (assembly), accedere 
+    a \textit{a[16]} significa calcolare un offset dal registro \textit{rbp}. Valgrind vede 
+    solo un accesso legittimo alla memoria dello stack e non riesce a 
+    distinguere i confini tra le due variabili, fallendo nel rilevare 
+    l'overflow locale.
+\end{itemize}
+
+\subsection{AddressSanitizer (ASan)}
+
+ASan risolve molti dei limiti di Valgrind operando a compile-time come 
+passaggio aggiuntivo del compilatore tramite il flag \textit{-fsanitize=address}.
+
+Dato che ASan opera durante la compilazione, altera il layout della memoria 
+del programma; aggiunge zone "cuscinetto" (\textit{redzones}) attorno a ogni variabile 
+globale, buffer nell'heap o array nello stack (tipicamente di 32 byte). 
+Queste aree vengono marcate come inaccessibili nella \textit{shadow memory}. A 
+proposito della \textit{shadow memory} va detto che ASan mappa ogni word 
+di 8 byte del programma in un signolo byte e dunque fa un uso più efficiente 
+della memoria rispetto a Valgrind, inoltre l'overhead sulla CPU è mediamente 
+solo 2x, rendendolo utilizzabile anche in contesti di test estesi.
+
+In generale, il compilatore inietta un controllo primordiale prima di ogni 
+istruzione di lettura o scrittura:
+
+\begin{lstlisting}
+// Codice iniettato da ASan
+Shadow = (Addr >> 3) + Offset; //Shadow byte
+if (*Shadow != 0) ReportAndCrash(Addr); //Crasha se lo stato e' "not addressable"
+// Codice originale
+*Addr = ...
+\end{lstlisting}
+
+Se un overflow cerca di toccare la \textit{redzone}, il controllo sul byte 
+ombra (\textit{shadow byte}) fallisce immediatamente e il programma va in crash volontario 
+riportando il bug.
+
+ASan può riconoscere anche il problema dello \textit{use-after-free} in quanto
+ad ogni variabile liberata il tool marca quei byte come "\textit{quarantined}"; quindi
+se si prova successivamente ad accedere a quella zona ASan segnala che si sta
+accedendo ad una zona messa in quarantena.
+
+\textbf{Limiti di ASan}
+\begin{itemize}
+    \item Più leggero, ma \textbf{meno preciso} di Valgrind avendo una \textbf{granularità di 8 byte}.
+    \item Nessuna distinzione tra i permessi di lettura e scrittura.
+    \item ASan può controllare solo gli accessi allineati in memoria.
+\end{itemize}
+
+In conclusione possiamo dire che entrambe le suite di tool possono rilevare
+la maggior parte dei bug relativi alla gestione della memoria, in particolare:
+
+\begin{itemize}
+    \item ASan offre un miglior supporto per il rilevamento dello \textit{stack/global array overrun}.
+    \item Valgrind/Memcheck offre un miglior supporto per il rilevamento dell'\textit{uninitialized memory}.
+\end{itemize}
